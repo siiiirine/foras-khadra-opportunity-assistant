@@ -2,7 +2,7 @@
 
 An AI-powered web application that helps users quickly understand scholarships, internships, jobs, competitions, and other opportunities through intelligent analysis and personalized insights.
 
-The application leverages a Large Language Model (LLM) to transform lengthy opportunity descriptions into structured information, making it easier to evaluate opportunities and decide whether they are a good fit.
+The application uses Large Language Models (LLMs) through OpenRouter/OpenAI to analyze opportunity descriptions, with Google Gemini and local analysis available as fallback options. It transforms lengthy opportunity descriptions into structured information that is easier to understand and evaluate.
 
 ---
 
@@ -19,7 +19,7 @@ The application leverages a Large Language Model (LLM) to transform lengthy oppo
 
 ### Personalized Insights
 
-- Opportunity Match Score based on the user's profile
+- AI-powered opportunity matching based on the user's profile
 - Eligibility assessment
 - Matching strengths
 - Missing skills or requirements
@@ -30,6 +30,7 @@ The application leverages a Large Language Model (LLM) to transform lengthy oppo
 - Analyze text from direct input
 - Upload text files
 - Analyze content from URLs
+- Match opportunities against a user profile
 - Analysis history
 - Copy results to clipboard
 - Export analysis as JSON or PDF
@@ -46,7 +47,7 @@ The application leverages a Large Language Model (LLM) to transform lengthy oppo
 |--------|------------|
 | Frontend | React, Vite, Tailwind CSS |
 | Backend | FastAPI, Python |
-| AI | OpenRouter API (OpenAI-compatible LLM) |
+| AI | OpenRouter API (OpenAI-compatible), Google Gemini, Local fallback |
 | HTTP Client | Axios |
 
 ---
@@ -80,8 +81,8 @@ The application leverages a Large Language Model (LLM) to transform lengthy oppo
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/ai-opportunity-assistant.git
-cd ai-opportunity-assistant
+git clone https://github.com/siiiirine/foras-khadra-opportunity-assistant.git
+cd foras-khadra-opportunity-assistant
 ```
 
 ---
@@ -109,7 +110,7 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-Install dependencies:
+Install the dependencies:
 
 ```bash
 pip install -r requirements.txt
@@ -118,7 +119,11 @@ pip install -r requirements.txt
 Create a `.env` file:
 
 ```env
-OPENROUTER_API_KEY=your_api_key
+OPENROUTER_API_KEY=your_openrouter_api_key
+GEMINI_API_KEY=your_gemini_api_key
+
+# Optional
+AI_PROVIDER=openrouter
 ```
 
 Run the backend:
@@ -126,6 +131,12 @@ Run the backend:
 ```bash
 python main.py
 ```
+
+> If your project uses Uvicorn directly, replace the last command with:
+>
+> ```bash
+> uvicorn main:app --reload
+> ```
 
 ---
 
@@ -137,23 +148,31 @@ npm install
 npm run dev
 ```
 
+(Optional) Create a frontend `.env` file:
+
+```env
+VITE_API_URL=http://localhost:8000
+```
+
 ---
 
 ## Usage
 
-1. Paste an opportunity description, upload a text file, or provide a URL.
+1. Paste an opportunity description, upload a text file, or provide an opportunity URL.
 2. Click **Analyze with AI**.
 3. View the generated:
-   - Title
+   - Opportunity title
    - Summary
    - Category
    - Tags
-   - Reading time
+   - Estimated reading time
    - Confidence score
 4. (Optional) Enter your profile information to receive:
    - Opportunity Match Score
    - Eligibility assessment
-   - Personalized recommendations
+   - Matching strengths
+   - Missing requirements
+   - Personalized AI recommendations
 
 ---
 
@@ -161,7 +180,7 @@ npm run dev
 
 ### POST `/api/analyze`
 
-### Request
+#### Request
 
 ```json
 {
@@ -169,7 +188,7 @@ npm run dev
 }
 ```
 
-### Response
+#### Response
 
 ```json
 {
@@ -190,15 +209,95 @@ npm run dev
 
 ---
 
+### POST `/api/analyze-with-match`
+
+#### Request
+
+```json
+{
+  "description": "Opportunity description...",
+  "user_profile": {
+    "education_level": "Bachelor",
+    "country": "Morocco",
+    "skills": [
+      "Python",
+      "React"
+    ],
+    "english_proficiency": "B2",
+    "years_experience": 2,
+    "field_of_study": "Computer Science",
+    "additional_info": "Optional notes"
+  }
+}
+```
+
+#### Response
+
+```json
+{
+  "title": "Google Summer Internship 2026",
+  "summary": "A short summary of the opportunity.",
+  "category": "Internship",
+  "tags": [
+    "Google",
+    "Software",
+    "Internship",
+    "Students",
+    "Remote"
+  ],
+  "reading_time": "2 min read",
+  "confidence": 95,
+  "match_result": {
+    "match_score": 82,
+    "eligible": true,
+    "strengths": [
+      "Strong Python skills",
+      "Relevant academic background"
+    ],
+    "missing_requirements": [
+      "TensorFlow experience"
+    ],
+    "recommendations": [
+      "Highlight your GitHub projects.",
+      "Include machine learning coursework."
+    ]
+  }
+}
+```
+
+---
+
+### POST `/api/fetch-url`
+
+#### Request
+
+```json
+{
+  "url": "https://example.com/opportunity"
+}
+```
+
+#### Response
+
+```json
+{
+  "content": "Extracted page content...",
+  "success": true
+}
+```
+
+---
+
 ## How It Works
 
-1. The user submits an opportunity description through the web interface.
-2. The backend sends the content to a Large Language Model via the OpenRouter API.
-3. The AI analyzes the opportunity and extracts structured information.
-4. The backend validates and formats the response.
-5. The frontend displays the analysis in an easy-to-read interface.
+1. The user submits an opportunity description by pasting text, uploading a file, or providing a URL.
+2. The backend sends the content to an LLM through OpenRouter/OpenAI when configured.
+3. If the primary provider is unavailable, the application automatically falls back to Google Gemini or a local analysis pipeline.
+4. The AI extracts structured information, including the title, summary, category, tags, estimated reading time, and confidence score.
+5. The backend validates the generated data before returning it to the frontend.
+6. The frontend presents the results in a clean, user-friendly interface.
 
-For personalized insights, the AI compares the user's profile with the opportunity requirements to generate a match score, identify strengths and missing qualifications, and provide recommendations.
+For personalized insights, the application compares the user's profile with the opportunity requirements to estimate compatibility, identify strengths, highlight missing qualifications, and generate actionable recommendations.
 
 ---
 
@@ -206,7 +305,7 @@ For personalized insights, the AI compares the user's profile with the opportuni
 
 - Semantic opportunity search
 - AI chatbot for opportunity Q&A
-- Resume/CV upload and matching
+- Resume/CV upload with automatic profile extraction
 - Personalized opportunity recommendations
 - Multi-language support
 
@@ -214,4 +313,4 @@ For personalized insights, the AI compares the user's profile with the opportuni
 
 ## Acknowledgements
 
-This project was developed as part of the **Foras Khadra AI Technical Assessment**, demonstrating the integration of AI into a real-world web application to enhance the opportunity discovery experience.
+This project was developed as part of the **Foras Khadra AI Technical Assessment**, demonstrating the integration of AI into a real-world web application to enhance opportunity discovery and decision-making.
